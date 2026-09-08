@@ -1,0 +1,121 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>Coffee Date</title>
+<meta name="theme-color" content="#3d2418" />
+<meta name="description" content="Cada día, la mejor foto de café gana un punto." />
+<link rel="manifest" href="/manifest.json" />
+<link rel="icon" href="/icons/icon-192.png" />
+<link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+<meta name="apple-mobile-web-app-title" content="Coffee Date" />
+<link rel="stylesheet" href="/style.css" />
+</head>
+<body>
+
+<div id="onboarding" class="screen" hidden>
+  <div class="onboarding-card">
+    <div class="brand">☕ Coffee Date</div>
+    <p>¿Quién eres?</p>
+    <div id="onboarding-buttons" class="onboarding-buttons"></div>
+    <button id="onboarding-edit-names" class="link-btn">Cambiar nombres</button>
+  </div>
+</div>
+
+<div id="app" class="screen" hidden>
+  <header class="app-header">
+    <div class="scoreboard" id="scoreboard">
+      <div class="score-side" id="score-a">
+        <span class="score-name" id="score-name-a">A</span>
+        <span class="score-value" id="score-value-a">0</span>
+      </div>
+      <div class="score-mid">
+        <span id="score-ties-wrap">🤝 <span id="score-ties">0</span></span>
+      </div>
+      <div class="score-side" id="score-b">
+        <span class="score-value" id="score-value-b">0</span>
+        <span class="score-name" id="score-name-b">B</span>
+      </div>
+    </div>
+    <button id="whoami-btn" class="whoami-btn"></button>
+  </header>
+
+  <main id="view-today" class="view">
+    <h2 class="today-date" id="today-date"></h2>
+
+    <section class="upload-card">
+      <form id="upload-form">
+        <label class="file-picker" id="file-picker-label">
+          <input type="file" id="photo-input" accept="image/*" capture="environment" required />
+          <span id="file-picker-text">📷 Subir foto de tu café</span>
+        </label>
+        <input type="text" id="caption-input" placeholder="Comentario (opcional)" maxlength="200" />
+        <button type="submit" class="primary-btn" id="upload-btn">Subir</button>
+      </form>
+      <p class="hint" id="upload-hint"></p>
+    </section>
+
+    <section id="today-status" class="today-status"></section>
+
+    <section id="photos-grid" class="photos-grid"></section>
+  </main>
+
+  <main id="view-calendar" class="view" hidden>
+    <div class="calendar-nav">
+      <button id="cal-prev" class="icon-btn">‹</button>
+      <h2 id="cal-month-label"></h2>
+      <button id="cal-next" class="icon-btn">›</button>
+    </div>
+    <div class="calendar-weekdays">
+      <span>L</span><span>M</span><span>X</span><span>J</span><span>V</span><span>S</span><span>D</span>
+    </div>
+    <div id="calendar-grid" class="calendar-grid"></div>
+  </main>
+
+  <main id="view-score" class="view" hidden>
+    <div class="score-big-card">
+      <div class="score-big-row">
+        <div class="score-big-side">
+          <div class="score-big-name" id="big-score-name-a"></div>
+          <div class="score-big-value" id="big-score-value-a">0</div>
+        </div>
+        <div class="score-big-vs">‑</div>
+        <div class="score-big-side">
+          <div class="score-big-name" id="big-score-name-b"></div>
+          <div class="score-big-value" id="big-score-value-b">0</div>
+        </div>
+      </div>
+      <p class="score-big-meta" id="score-big-meta"></p>
+    </div>
+    <section class="settings-card">
+      <h3>Ajustes</h3>
+      <label>Nombre Persona A <input id="settings-name-a" maxlength="40" /></label>
+      <label>Nombre Persona B <input id="settings-name-b" maxlength="40" /></label>
+      <button id="settings-save" class="primary-btn">Guardar</button>
+      <p class="hint">Estos nombres se ven en las dos pantallas de los dos móviles.</p>
+    </section>
+  </main>
+
+  <nav class="tabbar">
+    <button class="tab-btn active" data-view="today">☕<span>Hoy</span></button>
+    <button class="tab-btn" data-view="calendar">📅<span>Calendario</span></button>
+    <button class="tab-btn" data-view="score">🏆<span>Marcador</span></button>
+  </nav>
+</div>
+
+<div id="photo-modal" class="modal" hidden>
+  <div class="modal-backdrop"></div>
+  <div class="modal-content">
+    <button class="modal-close" id="modal-close">✕</button>
+    <div id="modal-body"></div>
+  </div>
+</div>
+
+<div id="toast" class="toast" hidden></div>
+
+<script src="/app.js"></script>
+</body>
+</html>
