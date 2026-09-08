@@ -5,8 +5,7 @@
   "description": "App para 2 personas: sube tu foto del café del día y vota la mejor.",
   "main": "server.js",
   "scripts": {
-    "start": "node server.js",
-    "generate-icons": "node scripts/generate-icons.js"
+    "start": "node server.js"
   },
   "engines": {
     "node": ">=18"

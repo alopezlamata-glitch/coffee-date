@@ -28,7 +28,6 @@ acceso más allá de que la URL no sea pública, así que no la compartáis.
 
 ```bash
 npm install
-npm run generate-icons   # solo hace falta una vez (ya están generados en public/icons)
 npm start
 ```
 
@@ -88,8 +87,8 @@ navegador.
 ```
 server.js           servidor Express + rutas de la API
 lib/store.js         lógica de datos (fotos, votos, calendario, marcador)
-lib/png.js            generador mínimo de PNG (sin dependencias) para los iconos
-scripts/generate-icons.js
+assets/logo-source.png   arte original del logo (icono + wordmark)
 public/               frontend (HTML/CSS/JS vanilla) + manifest PWA + service worker
+public/icons/          iconos de la PWA generados a partir del logo
 data/                 (no versionado) fotos subidas y base de datos JSON
 ```
