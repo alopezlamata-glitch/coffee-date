@@ -130,22 +130,24 @@
 
   const views = {
     today: $('#view-today'),
+    add: $('#view-add'),
     calendar: $('#view-calendar'),
     score: $('#view-score')
   };
 
+  function switchTab(view) {
+    document.querySelectorAll('.tab-btn').forEach((b) => b.classList.toggle('active', b.dataset.view === view));
+    Object.entries(views).forEach(([key, node]) => { node.hidden = key !== view; });
+    if (view === 'calendar') renderCalendar();
+    if (view === 'score') {
+      refreshScores();
+      $('#settings-name-a').value = state.settings.personA;
+      $('#settings-name-b').value = state.settings.personB;
+    }
+  }
+
   document.querySelectorAll('.tab-btn').forEach((btn) => {
-    btn.addEventListener('click', () => {
-      document.querySelectorAll('.tab-btn').forEach((b) => b.classList.remove('active'));
-      btn.classList.add('active');
-      Object.entries(views).forEach(([key, node]) => { node.hidden = key !== btn.dataset.view; });
-      if (btn.dataset.view === 'calendar') renderCalendar();
-      if (btn.dataset.view === 'score') {
-        refreshScores();
-        $('#settings-name-a').value = state.settings.personA;
-        $('#settings-name-b').value = state.settings.personB;
-      }
-    });
+    btn.addEventListener('click', () => switchTab(btn.dataset.view));
   });
 
   $('#settings-save').addEventListener('click', async () => {
@@ -191,8 +193,9 @@
       fileInput.value = '';
       $('#caption-input').value = '';
       $('#file-picker-text').textContent = 'Add photo';
-      showToast('Photo uploaded!');
       await renderToday();
+      switchTab('today');
+      showToast('Photo uploaded!');
     } catch (err) {
       showToast(err.message);
     } finally {
@@ -232,28 +235,35 @@
   $('#modal-close').addEventListener('click', () => { $('#photo-modal').hidden = true; });
   document.querySelector('.modal-backdrop').addEventListener('click', () => { $('#photo-modal').hidden = true; });
 
+  const STAR_ICON = '<svg viewBox="0 0 24 24"><path d="M12 2.5l2.9 6 6.6.9-4.8 4.6 1.1 6.6L12 17.9l-5.8 3.1 1.1-6.6L2.5 9.4l6.6-.9L12 2.5Z"/></svg>';
+
   function buildPhotoCard(photo, day) {
     const card = el('div', { className: 'photo-card' });
-    if (day.winner && day.winner.photoId === photo.id) {
-      card.appendChild(el('div', { className: 'winner-badge', textContent: 'Winner' }));
-    }
+    const media = el('div', { className: 'photo-media' });
+
     const img = el('img', { src: photo.path, alt: '' });
     img.addEventListener('click', () => openPhotoModal(photo));
-    card.appendChild(img);
-    card.appendChild(el('div', { className: 'photo-caption', textContent: photo.caption || '' }));
+    media.appendChild(img);
 
-    const row = el('div', { className: 'photo-vote-row' });
     const isMyVote = day.myVote === photo.id;
-    const voteBtn = el('button', {
-      className: `vote-btn${isMyVote ? ' voted' : ''}`,
-      textContent: isMyVote ? '✓ Your vote' : 'Vote'
+    const starBtn = el('button', {
+      type: 'button',
+      className: `star-btn${isMyVote ? ' voted' : ''}`,
+      title: isMyVote ? 'Your vote' : 'Vote for this photo'
     });
-    voteBtn.addEventListener('click', () => vote(photo.id));
-    row.appendChild(voteBtn);
-    if (day.bothVoted && photo.voteCount !== null) {
-      row.appendChild(el('span', { className: 'vote-count', textContent: plural(photo.voteCount, 'vote') }));
+    starBtn.innerHTML = STAR_ICON;
+    starBtn.addEventListener('click', () => vote(photo.id));
+    media.appendChild(starBtn);
+
+    if (day.winner && day.winner.photoId === photo.id) {
+      media.appendChild(el('div', { className: 'winner-badge', textContent: 'Winner' }));
     }
-    card.appendChild(row);
+
+    card.appendChild(media);
+    card.appendChild(el('div', { className: 'photo-caption', textContent: photo.caption || '' }));
+    if (day.bothVoted && photo.voteCount !== null) {
+      card.appendChild(el('span', { className: 'vote-count', textContent: plural(photo.voteCount, 'vote') }));
+    }
     return card;
   }
 
@@ -289,7 +299,7 @@
     } else if (day.myVote) {
       statusEl.textContent = `You voted. Waiting on ${personName(otherPerson(state.me))}…`;
     } else {
-      statusEl.textContent = "Vote for today's favorite photo.";
+      statusEl.textContent = "Tap the star on today's best photo.";
     }
 
     renderPersonSection('a', day);

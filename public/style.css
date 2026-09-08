@@ -311,10 +311,13 @@ h2, h3 {
   border-radius: var(--radius-md);
   overflow: hidden;
   box-shadow: var(--shadow-sm);
+}
+
+.photo-media {
   position: relative;
 }
 
-.photo-card img {
+.photo-media img {
   width: 100%;
   aspect-ratio: 1;
   object-fit: cover;
@@ -324,42 +327,50 @@ h2, h3 {
 }
 
 .photo-card .photo-caption {
-  padding: 8px 10px 0;
+  padding: 8px 10px;
   font-size: 0.78rem;
   color: var(--text-muted);
   min-height: 1.1em;
 }
 
-.photo-vote-row {
+.star-btn {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  border: none;
+  background: rgba(36, 24, 18, 0.45);
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  padding: 10px;
-  gap: 6px;
-}
-
-.vote-btn {
-  flex: 1;
-  border: 1px solid var(--coffee-dark);
-  background: var(--surface);
-  color: var(--coffee-dark);
-  border-radius: var(--radius-sm);
-  padding: 8px;
-  font-size: 0.82rem;
-  font-weight: 600;
+  justify-content: center;
+  padding: 0;
   cursor: pointer;
-  transition: background 0.15s ease, color 0.15s ease;
+  transition: background 0.15s ease;
 }
 
-.vote-btn.voted {
-  background: var(--coffee-dark);
-  border-color: var(--coffee-dark);
-  color: white;
+.star-btn svg {
+  width: 17px;
+  height: 17px;
+  fill: none;
+  stroke: white;
+  stroke-width: 1.8;
+  stroke-linejoin: round;
 }
 
-.vote-btn:disabled { opacity: 0.5; cursor: default; }
+.star-btn.voted {
+  background: rgba(36, 24, 18, 0.55);
+}
+
+.star-btn.voted svg {
+  fill: var(--tan);
+  stroke: var(--tan);
+}
 
 .vote-count {
+  display: inline-block;
+  margin: 0 10px 10px;
   font-size: 0.72rem;
   font-weight: 600;
   color: var(--coffee-dark);
