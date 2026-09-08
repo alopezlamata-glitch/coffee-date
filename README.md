@@ -39,9 +39,9 @@ which are not committed to the repository.
 ## Deploying so both phones can use it
 
 You need the server reachable over the internet (`localhost` won't work,
-since each person is on a different phone). The simplest, free way:
+since each person is on a different phone).
 
-### Option A: Render.com (recommended)
+### Option A: Render.com (easiest, but sleeps on the free tier)
 
 1. Create an account at [render.com](https://render.com) and connect this
    GitHub repository.
@@ -52,10 +52,15 @@ since each person is on a different phone). The simplest, free way:
 5. Once deployed, you'll get a URL like
    `https://coffee-date-xxxx.onrender.com`.
 
+The **Free** instance type spins down after 15 minutes of inactivity
+(~30s cold start on the next open). The **Starter** plan (~$7/month)
+removes that — same setup, just pick the paid instance type.
+
 ### Option B: Railway / Fly.io
 
 Both support the Dockerfile in this repo directly, plus a persistent disk
 for the `data/` folder. Push the repo and mount a volume at `/app/data`.
+Fly.io's smallest always-on machine runs a few dollars a month.
 
 ### Option C: Docker on your own server / VPS / Raspberry Pi
 
@@ -67,6 +72,78 @@ docker run -d -p 3000:3000 -v coffee-date-data:/app/data coffee-date
 Put a proxy (Caddy, nginx, Cloudflare Tunnel...) in front to serve HTTPS on
 your domain or subdomain — HTTPS is required for the PWA (and the phone
 camera) to work properly.
+
+### Option D: Google Cloud "Always Free" VM (free forever, always on)
+
+Google Cloud's free tier includes one `e2-micro` VM that runs 24/7 at no
+cost (in `us-west1`, `us-central1`, or `us-east1`). It needs a credit card
+to verify the account but won't charge you within the free tier. This is
+a real server you manage yourself, not a "connect GitHub and go" platform,
+but it never sleeps and never expires.
+
+1. **Create the VM** — [console.cloud.google.com](https://console.cloud.google.com)
+   → Compute Engine → VM instances → Create Instance.
+   - Region: `us-central1` (must be one of the 3 free-tier regions above)
+   - Machine type: `e2-micro`
+   - Boot disk: Ubuntu 22.04 LTS, 30 GB standard persistent disk (the free
+     tier's max)
+   - Under Firewall, check **Allow HTTP traffic** and **Allow HTTPS
+     traffic**
+   - Create it, then note its external IP (shown in the VM list, e.g.
+     `34.123.45.67`)
+
+2. **SSH in** using the "SSH" button next to the instance in the console
+   (opens a terminal in your browser, nothing to install locally).
+
+3. **Install Node.js and git:**
+   ```bash
+   curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash -
+   sudo apt install -y nodejs git
+   ```
+
+4. **Clone and run the app** (until this branch is merged, check it out
+   explicitly):
+   ```bash
+   git clone https://github.com/alopezlamata-glitch/coffee-date.git
+   cd coffee-date
+   git checkout claude/coffee-date-repo-cp3d5u
+   npm install
+   sudo npm install -g pm2
+   pm2 start server.js --name coffee-date
+   pm2 save
+   pm2 startup   # then run the command it prints, so it survives reboots
+   ```
+
+5. **Get free HTTPS without owning a domain**, using
+   [sslip.io](https://sslip.io) (a free DNS service that resolves
+   `<your-ip-with-dashes>.sslip.io` to your VM's IP) plus
+   [Caddy](https://caddyserver.com) for an automatic trusted certificate:
+   ```bash
+   sudo apt install -y debian-keyring debian-archive-keyring apt-transport-https curl
+   curl -1sLf 'https://dl.cloudsmith.io/public/caddy/stable/gpg.key' | sudo gpg --dearmor -o /usr/share/keyrings/caddy-stable-archive-keyring.gpg
+   curl -1sLf 'https://dl.cloudsmith.io/public/caddy/stable/debian.deb.txt' | sudo tee /etc/apt/sources.list.d/caddy-stable.list
+   sudo apt update && sudo apt install -y caddy
+   ```
+   Replace `34-123-45-67` below with your own VM's IP, dashes instead of
+   dots:
+   ```bash
+   echo '34-123-45-67.sslip.io {
+     reverse_proxy localhost:3000
+   }' | sudo tee /etc/caddy/Caddyfile
+   sudo systemctl restart caddy
+   ```
+   Your app is now live at `https://34-123-45-67.sslip.io` with a real,
+   trusted certificate — no domain purchase needed. (Already have a
+   domain on Cloudflare? A [Cloudflare Tunnel](https://developers.cloudflare.com/cloudflare-one/connections/connect-networks/)
+   works too, and skips opening any firewall ports at all.)
+
+6. **To update the app later:**
+   ```bash
+   cd ~/coffee-date && git pull && pm2 restart coffee-date
+   ```
+
+Data lives in `~/coffee-date/data` on the VM's own disk, so it survives
+reboots with no extra setup.
 
 ## Installing on your phone (no app store)
 
