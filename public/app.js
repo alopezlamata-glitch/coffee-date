@@ -43,13 +43,8 @@
     return (name.trim().charAt(0) || '?').toUpperCase();
   }
 
-  function timeAgo(iso) {
-    const minutes = Math.floor((Date.now() - new Date(iso).getTime()) / 60000);
-    if (minutes < 1) return 'Just now';
-    if (minutes < 60) return `${minutes}m ago`;
-    const hours = Math.floor(minutes / 60);
-    if (hours < 24) return `${hours}h ago`;
-    return `${Math.floor(hours / 24)}d ago`;
+  function formatUploadTime(iso) {
+    return new Date(iso).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
   }
 
   function showToast(msg) {
@@ -286,7 +281,7 @@
       el('div', { className: `avatar avatar-${photo.person}`, textContent: initials(personName(photo.person)) }),
       el('div', { className: 'feed-post-headtext' }, [
         el('span', { className: 'feed-post-name', textContent: personName(photo.person) }),
-        el('span', { className: 'feed-post-time', textContent: timeAgo(photo.createdAt) })
+        el('span', { className: 'feed-post-time', textContent: formatUploadTime(photo.createdAt) })
       ])
     ]));
 
