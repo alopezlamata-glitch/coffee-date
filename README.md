@@ -145,6 +145,60 @@ but it never sleeps and never expires.
 Data lives in `~/coffee-date/data` on the VM's own disk, so it survives
 reboots with no extra setup.
 
+### Option E: Oracle Cloud "Always Free" VM (free forever, always on)
+
+Same idea as Option D, on Oracle Cloud instead. Also needs a credit card
+to verify the account, no charge within the free tier. Two things are
+different enough from Google Cloud to trip people up, called out below.
+
+1. **Create the instance** — [cloud.oracle.com](https://cloud.oracle.com)
+   → ☰ menu → Compute → Instances → Create Instance.
+   - Name: `coffee-date`
+   - Image and shape → Edit → Image: **Canonical Ubuntu 22.04**; Shape:
+     Change shape → select **VM.Standard.E2.1.Micro** (it's labeled
+     "Always Free eligible" — this is a *separate* free allowance from
+     the ARM `A1.Flex` shape, so it doesn't compete with another app
+     already using your ARM quota)
+   - Networking: keep the default VCN/subnet, and make sure **"Assign a
+     public IPv4 address"** is set to Yes
+   - Add SSH keys: choose **"Generate a key pair for me"** and download
+     the private key file right away — it's only offered once
+   - Create it, then note its public IP (e.g. `123.45.67.89`)
+
+2. **Open the firewall — two layers, both need a rule for 80/443:**
+   - In the console: Networking → Virtual Cloud Networks → your VCN →
+     Security Lists → Default Security List → Add Ingress Rules, twice:
+     Source CIDR `0.0.0.0/0`, TCP, destination port `80`, and the same
+     for port `443`.
+   - On the VM itself: Oracle's Ubuntu image also ships with `iptables`
+     rules that block everything but SSH by default (a common gotcha —
+     the console-level rule above isn't enough on its own). After SSH'ing
+     in (step 3), run:
+     ```bash
+     sudo iptables -I INPUT 6 -m state --state NEW -p tcp --dport 80 -j ACCEPT
+     sudo iptables -I INPUT 6 -m state --state NEW -p tcp --dport 443 -j ACCEPT
+     sudo netfilter-persistent save
+     ```
+
+3. **SSH in** using the key file you downloaded:
+   ```bash
+   chmod 600 ~/Downloads/ssh-key-*.key
+   ssh -i ~/Downloads/ssh-key-*.key ubuntu@123.45.67.89
+   ```
+
+4. **From here it's identical to the Google Cloud steps** — install
+   Node.js + git, clone the repo, run it with `pm2`, and set up Caddy +
+   sslip.io for free HTTPS (steps 3-6 in Option D above).
+
+**On the "reclaimed for inactivity" risk:** Oracle's Always Free tier
+can reclaim an instance it judges idle (very low CPU/network/memory for
+~7 days straight). Two people using the app daily should keep it active
+enough on its own; if you expect a long stretch of no one opening it, a
+simple cron heartbeat avoids any doubt:
+```bash
+(crontab -l 2>/dev/null; echo "*/10 * * * * curl -s -o /dev/null http://localhost:3000/") | crontab -
+```
+
 ## Installing on your phone (no app store)
 
 Once the app is deployed at an HTTPS URL:
