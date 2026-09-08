@@ -1,94 +1,92 @@
 # ☕ Coffee Date
 
-App privada para 2 personas: cada día subís fotos de los cafés que os tomáis
-y votáis cuál es la mejor. Se guarda un calendario con la foto ganadora de
-cada día y un marcador de quién va ganando. Sin cuentas, sin tienda de apps:
-se instala en el móvil como PWA directamente desde el navegador.
+A private app for 2 people: every day you both upload photos of the coffees
+you drink and vote for the best one. It keeps a calendar with the winning
+photo of each day and a running score of who's ahead. No accounts, no app
+store: it installs on your phone as a PWA straight from the browser.
 
-## Cómo funciona
+## How it works
 
-- Al entrar, cada dispositivo elige quién es ("Persona A" / "Persona B",
-  con los nombres que le pongáis). Esa elección se guarda solo en ese móvil
-  (`localStorage`), no hace falta usuario ni contraseña.
-- Durante el día, cada persona sube las fotos de sus cafés desde la pestaña
-  **Hoy**.
-- Cada persona vota, una vez al día, su foto favorita entre todas las
-  subidas (las suyas y las de la otra persona). Los votos quedan ocultos
-  hasta que las dos personas han votado, para no influenciar el voto.
-- Cuando ambas han votado, se revela la foto ganadora del día (o empate) y
-  suma un punto en el marcador.
-- La pestaña **Calendario** muestra la foto ganadora de cada día del mes.
-- La pestaña **Marcador** muestra el resultado acumulado y permite cambiar
-  los nombres de las dos personas.
+- On first visit, each device picks who it is ("Person A" / "Person B",
+  with whatever names you give them). That choice is stored only on that
+  phone (`localStorage`) — no username or password needed.
+- Throughout the day, each person uploads photos of their coffees from the
+  **Today** tab.
+- Each person votes, once a day, for their favorite photo among all the
+  ones uploaded (both their own and their partner's). Votes stay hidden
+  until both people have voted, so nobody is influenced.
+- Once both have voted, the day's winning photo (or a tie) is revealed and
+  a point is added to the score.
+- The **Calendar** tab shows the winning photo for each day of the month.
+- The **Score** tab shows the running total and lets you change both
+  people's names.
 
-Todo el mundo que entre a la URL ve los mismos datos: no hay control de
-acceso más allá de que la URL no sea pública, así que no la compartáis.
+Anyone who opens the URL sees the same data — there's no access control
+beyond the URL not being public, so don't share it around.
 
-## Desarrollo local
+## Local development
 
 ```bash
 npm install
 npm start
 ```
 
-Abre `http://localhost:3000`.
+Open `http://localhost:3000`.
 
-Los datos (fotos y votos) se guardan en `data/db.json` y `data/uploads/`,
-que no se suben al repositorio.
+Data (photos and votes) is stored in `data/db.json` and `data/uploads/`,
+which are not committed to the repository.
 
-## Desplegar para que los dos móviles puedan usarla
+## Deploying so both phones can use it
 
-Necesitas que el servidor esté accesible por internet (no vale con
-`localhost`, porque cada persona está en un móvil distinto). La forma más
-sencilla y gratuita:
+You need the server reachable over the internet (`localhost` won't work,
+since each person is on a different phone). The simplest, free way:
 
-### Opción A: Render.com (recomendada)
+### Option A: Render.com (recommended)
 
-1. Crea una cuenta en [render.com](https://render.com) y conecta este
-   repositorio de GitHub.
-2. "New Web Service" → selecciona el repo `coffee-date`.
+1. Create an account at [render.com](https://render.com) and connect this
+   GitHub repository.
+2. "New Web Service" → select the `coffee-date` repo.
 3. Build command: `npm install`. Start command: `npm start`.
-4. Añade un **disco persistente** (Render → "Disks") montado en `/opt/render/project/src/data`
-   para que las fotos y votos no se borren en cada despliegue.
-5. Cuando termine el despliegue, tendrás una URL tipo
+4. Add a **persistent disk** (Render → "Disks") mounted at
+   `/opt/render/project/src/data` so photos and votes survive redeploys.
+5. Once deployed, you'll get a URL like
    `https://coffee-date-xxxx.onrender.com`.
 
-### Opción B: Railway / Fly.io
+### Option B: Railway / Fly.io
 
-Ambos soportan Dockerfile directamente (incluido en este repo) y disco
-persistente para la carpeta `data/`. Sube el repo y monta un volumen en
-`/app/data`.
+Both support the Dockerfile in this repo directly, plus a persistent disk
+for the `data/` folder. Push the repo and mount a volume at `/app/data`.
 
-### Opción C: Docker en tu propio servidor / VPS / Raspberry Pi
+### Option C: Docker on your own server / VPS / Raspberry Pi
 
 ```bash
 docker build -t coffee-date .
 docker run -d -p 3000:3000 -v coffee-date-data:/app/data coffee-date
 ```
 
-Pon un proxy (Caddy, nginx, Cloudflare Tunnel...) delante para servir con
-HTTPS en tu dominio o subdominio — hace falta HTTPS para que la PWA (y la
-cámara del móvil) funcionen bien.
+Put a proxy (Caddy, nginx, Cloudflare Tunnel...) in front to serve HTTPS on
+your domain or subdomain — HTTPS is required for the PWA (and the phone
+camera) to work properly.
 
-## Instalar en el móvil (sin tienda de apps)
+## Installing on your phone (no app store)
 
-Una vez desplegada la app en una URL con HTTPS:
+Once the app is deployed at an HTTPS URL:
 
-- **Android (Chrome)**: abre la URL → menú (⋮) → "Añadir a pantalla de
-  inicio" / "Instalar aplicación".
-- **iPhone (Safari)**: abre la URL → botón compartir (□↑) → "Añadir a
-  pantalla de inicio".
+- **Android (Chrome)**: open the URL → menu (⋮) → "Add to Home screen" /
+  "Install app".
+- **iPhone (Safari)**: open the URL → share button (□↑) → "Add to Home
+  Screen".
 
-Queda como un icono más en el móvil, a pantalla completa, sin barra de
-navegador.
+It sits on the phone like any other app icon, full screen, no browser
+chrome.
 
-## Estructura del proyecto
+## Project structure
 
 ```
-server.js           servidor Express + rutas de la API
-lib/store.js         lógica de datos (fotos, votos, calendario, marcador)
-assets/logo-source.png   arte original del logo (icono + wordmark)
-public/               frontend (HTML/CSS/JS vanilla) + manifest PWA + service worker
-public/icons/          iconos de la PWA generados a partir del logo
-data/                 (no versionado) fotos subidas y base de datos JSON
+server.js                 Express server + API routes
+lib/store.js               data logic (photos, votes, calendar, score)
+assets/logo-source.png     original logo artwork (icon + wordmark)
+public/                    frontend (vanilla HTML/CSS/JS) + PWA manifest + service worker
+public/icons/                PWA icons generated from the logo
+data/                       (not versioned) uploaded photos and JSON database
 ```

@@ -1,11 +1,11 @@
 <!doctype html>
-<html lang="es">
+<html lang="en">
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
 <title>Coffee Date</title>
 <meta name="theme-color" content="#3d2418" />
-<meta name="description" content="Cada día, la mejor foto de café gana un punto." />
+<meta name="description" content="Every day, the best coffee photo wins a point." />
 <link rel="manifest" href="/manifest.json" />
 <link rel="icon" href="/icons/icon-192.png" />
 <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
@@ -19,9 +19,9 @@
 <div id="onboarding" class="screen" hidden>
   <div class="onboarding-card">
     <img class="brand-logo" src="/icons/logo-hero.png" alt="Coffee Date" />
-    <p>¿Quién eres?</p>
+    <p class="onboarding-question">Who are you?</p>
     <div id="onboarding-buttons" class="onboarding-buttons"></div>
-    <button id="onboarding-edit-names" class="link-btn">Cambiar nombres</button>
+    <button id="onboarding-edit-names" class="link-btn">Change names</button>
   </div>
 </div>
 
@@ -33,7 +33,7 @@
         <span class="score-value" id="score-value-a">0</span>
       </div>
       <div class="score-mid">
-        <span id="score-ties-wrap">🤝 <span id="score-ties">0</span></span>
+        <span id="score-ties">0 ties</span>
       </div>
       <div class="score-side" id="score-b">
         <span class="score-value" id="score-value-b">0</span>
@@ -50,10 +50,14 @@
       <form id="upload-form">
         <label class="file-picker" id="file-picker-label">
           <input type="file" id="photo-input" accept="image/*" capture="environment" required />
-          <span id="file-picker-text">📷 Subir foto de tu café</span>
+          <svg class="file-picker-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M4 8.5A1.5 1.5 0 0 1 5.5 7h2l1-1.5h7L16.5 7h2A1.5 1.5 0 0 1 20 8.5v9A1.5 1.5 0 0 1 18.5 19h-13A1.5 1.5 0 0 1 4 17.5v-9Z" />
+            <circle cx="12" cy="13" r="3.2" />
+          </svg>
+          <span id="file-picker-text">Add photo</span>
         </label>
-        <input type="text" id="caption-input" placeholder="Comentario (opcional)" maxlength="200" />
-        <button type="submit" class="primary-btn" id="upload-btn">Subir</button>
+        <input type="text" id="caption-input" placeholder="Add a note (optional)" maxlength="200" />
+        <button type="submit" class="primary-btn" id="upload-btn">Upload</button>
       </form>
       <p class="hint" id="upload-hint"></p>
     </section>
@@ -65,12 +69,12 @@
 
   <main id="view-calendar" class="view" hidden>
     <div class="calendar-nav">
-      <button id="cal-prev" class="icon-btn">‹</button>
+      <button id="cal-prev" class="icon-btn" aria-label="Previous month">‹</button>
       <h2 id="cal-month-label"></h2>
-      <button id="cal-next" class="icon-btn">›</button>
+      <button id="cal-next" class="icon-btn" aria-label="Next month">›</button>
     </div>
     <div class="calendar-weekdays">
-      <span>L</span><span>M</span><span>X</span><span>J</span><span>V</span><span>S</span><span>D</span>
+      <span>M</span><span>T</span><span>W</span><span>T</span><span>F</span><span>S</span><span>S</span>
     </div>
     <div id="calendar-grid" class="calendar-grid"></div>
   </main>
@@ -82,7 +86,7 @@
           <div class="score-big-name" id="big-score-name-a"></div>
           <div class="score-big-value" id="big-score-value-a">0</div>
         </div>
-        <div class="score-big-vs">‑</div>
+        <div class="score-big-vs">–</div>
         <div class="score-big-side">
           <div class="score-big-name" id="big-score-name-b"></div>
           <div class="score-big-value" id="big-score-value-b">0</div>
@@ -91,25 +95,49 @@
       <p class="score-big-meta" id="score-big-meta"></p>
     </div>
     <section class="settings-card">
-      <h3>Ajustes</h3>
-      <label>Nombre Persona A <input id="settings-name-a" maxlength="40" /></label>
-      <label>Nombre Persona B <input id="settings-name-b" maxlength="40" /></label>
-      <button id="settings-save" class="primary-btn">Guardar</button>
-      <p class="hint">Estos nombres se ven en las dos pantallas de los dos móviles.</p>
+      <h3>Settings</h3>
+      <label>Person A name <input id="settings-name-a" maxlength="40" /></label>
+      <label>Person B name <input id="settings-name-b" maxlength="40" /></label>
+      <button id="settings-save" class="primary-btn">Save</button>
+      <p class="hint">These names show up on both phones.</p>
     </section>
   </main>
 
   <nav class="tabbar">
-    <button class="tab-btn active" data-view="today">☕<span>Hoy</span></button>
-    <button class="tab-btn" data-view="calendar">📅<span>Calendario</span></button>
-    <button class="tab-btn" data-view="score">🏆<span>Marcador</span></button>
+    <button class="tab-btn active" data-view="today">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M4 8h12v6a4 4 0 0 1-4 4H8a4 4 0 0 1-4-4V8Z" />
+        <path d="M16 9h1.5a2.5 2.5 0 0 1 0 5H16" />
+        <path d="M7 4c.5 1 .5 2-.3 3M11 4c.5 1 .5 2-.3 3" />
+      </svg>
+      <span>Today</span>
+    </button>
+    <button class="tab-btn" data-view="calendar">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <rect x="3.5" y="5" width="17" height="15" rx="2.5" />
+        <path d="M3.5 9.5h17" />
+        <path d="M8 3v4M16 3v4" />
+      </svg>
+      <span>Calendar</span>
+    </button>
+    <button class="tab-btn" data-view="score">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M8 4h8v4a4 4 0 0 1-8 0V4Z" />
+        <path d="M8 5H5.5A1.5 1.5 0 0 0 4 6.5a3.5 3.5 0 0 0 3.5 3.5H8" />
+        <path d="M16 5h2.5A1.5 1.5 0 0 1 20 6.5 3.5 3.5 0 0 1 16.5 10H16" />
+        <path d="M12 12v3" />
+        <path d="M9 20h6" />
+        <path d="M9.5 20c0-2 .5-3 2.5-3s2.5 1 2.5 3" />
+      </svg>
+      <span>Score</span>
+    </button>
   </nav>
 </div>
 
 <div id="photo-modal" class="modal" hidden>
   <div class="modal-backdrop"></div>
   <div class="modal-content">
-    <button class="modal-close" id="modal-close">✕</button>
+    <button class="modal-close" id="modal-close" aria-label="Close">✕</button>
     <div id="modal-body"></div>
   </div>
 </div>

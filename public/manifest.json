@@ -1,7 +1,7 @@
 {
   "name": "Coffee Date",
   "short_name": "Coffee Date",
-  "description": "Cada día, la mejor foto de café gana un punto.",
+  "description": "Every day, the best coffee photo wins a point.",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",

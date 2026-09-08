@@ -1,7 +1,7 @@
 (() => {
   const state = {
     me: localStorage.getItem('coffeeDatePerson'),
-    settings: { personA: 'Persona A', personB: 'Persona B' },
+    settings: { personA: 'Person A', personB: 'Person B' },
     calendarCursor: new Date()
   };
 
@@ -31,6 +31,10 @@
     return str.charAt(0).toUpperCase() + str.slice(1);
   }
 
+  function plural(n, word) {
+    return `${n} ${word}${n === 1 ? '' : 's'}`;
+  }
+
   function personName(p) {
     return p === 'a' ? state.settings.personA : state.settings.personB;
   }
@@ -47,7 +51,7 @@
     const res = await fetch(path, options);
     let data = null;
     try { data = await res.json(); } catch (_) { /* no body */ }
-    if (!res.ok) throw new Error((data && data.error) || 'Error de red');
+    if (!res.ok) throw new Error((data && data.error) || 'Network error');
     return data;
   }
 
@@ -79,9 +83,9 @@
   }
 
   $('#onboarding-edit-names').addEventListener('click', async () => {
-    const a = prompt('Nombre de la primera persona:', state.settings.personA);
+    const a = prompt('First person\'s name:', state.settings.personA);
     if (a === null) return;
-    const b = prompt('Nombre de la segunda persona:', state.settings.personB);
+    const b = prompt('Second person\'s name:', state.settings.personB);
     if (b === null) return;
     state.settings = await api('/api/settings', {
       method: 'POST',
@@ -94,11 +98,11 @@
   // ---------- Header / scoreboard ----------
 
   function renderWhoAmI() {
-    $('#whoami-btn').textContent = `Eres: ${personName(state.me)}`;
+    $('#whoami-btn').textContent = `You are: ${personName(state.me)}`;
   }
 
   $('#whoami-btn').addEventListener('click', () => {
-    if (confirm('¿Cambiar quién eres en este dispositivo?')) {
+    if (confirm('Change who you are on this device?')) {
       localStorage.removeItem('coffeeDatePerson');
       location.reload();
     }
@@ -110,14 +114,14 @@
     $('#score-name-b').textContent = state.settings.personB;
     $('#score-value-a').textContent = scores.a;
     $('#score-value-b').textContent = scores.b;
-    $('#score-ties').textContent = scores.ties;
+    $('#score-ties').textContent = plural(scores.ties, 'tie');
 
     $('#big-score-name-a').textContent = state.settings.personA;
     $('#big-score-name-b').textContent = state.settings.personB;
     $('#big-score-value-a').textContent = scores.a;
     $('#big-score-value-b').textContent = scores.b;
     $('#score-big-meta').textContent =
-      `${scores.daysPlayed} día${scores.daysPlayed === 1 ? '' : 's'} jugado${scores.daysPlayed === 1 ? '' : 's'} · ${scores.ties} empate${scores.ties === 1 ? '' : 's'}`;
+      `${plural(scores.daysPlayed, 'day')} played · ${plural(scores.ties, 'tie')}`;
   }
 
   // ---------- Tabs ----------
@@ -153,14 +157,14 @@
     });
     renderWhoAmI();
     refreshScores();
-    showToast('Nombres actualizados');
+    showToast('Names updated');
   });
 
   // ---------- Today view ----------
 
   $('#photo-input').addEventListener('change', () => {
     const file = $('#photo-input').files[0];
-    $('#file-picker-text').textContent = file ? `📷 ${file.name}` : '📷 Subir foto de tu café';
+    $('#file-picker-text').textContent = file ? file.name : 'Add photo';
   });
 
   $('#upload-form').addEventListener('submit', async (e) => {
@@ -169,7 +173,7 @@
     if (!fileInput.files[0]) return;
     const btn = $('#upload-btn');
     btn.disabled = true;
-    btn.textContent = 'Subiendo…';
+    btn.textContent = 'Uploading…';
     try {
       const fd = new FormData();
       fd.append('date', todayStr());
@@ -179,19 +183,19 @@
       await fetch('/api/photos', { method: 'POST', body: fd }).then(async (res) => {
         if (!res.ok) {
           const data = await res.json().catch(() => ({}));
-          throw new Error(data.error || 'No se pudo subir');
+          throw new Error(data.error || 'Upload failed');
         }
       });
       fileInput.value = '';
       $('#caption-input').value = '';
-      $('#file-picker-text').textContent = '📷 Subir foto de tu café';
-      showToast('¡Foto subida!');
+      $('#file-picker-text').textContent = 'Add photo';
+      showToast('Photo uploaded!');
       await renderToday();
     } catch (err) {
       showToast(err.message);
     } finally {
       btn.disabled = false;
-      btn.textContent = 'Subir';
+      btn.textContent = 'Upload';
     }
   });
 
@@ -202,7 +206,7 @@
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ date: todayStr(), voter: state.me, photoId })
       });
-      showToast('Voto registrado');
+      showToast('Vote saved');
       await renderToday();
     } catch (err) {
       showToast(err.message);
@@ -228,7 +232,7 @@
 
   async function renderToday() {
     const date = todayStr();
-    $('#today-date').textContent = capitalizeFirst(new Date().toLocaleDateString('es-ES', {
+    $('#today-date').textContent = capitalizeFirst(new Date().toLocaleDateString('en-US', {
       weekday: 'long', day: 'numeric', month: 'long'
     }));
 
@@ -236,15 +240,15 @@
 
     const statusEl = $('#today-status');
     if (day.photos.length === 0) {
-      statusEl.textContent = 'Nadie ha subido fotos hoy todavía.';
+      statusEl.textContent = 'No photos uploaded today yet.';
     } else if (day.bothVoted) {
       statusEl.textContent = day.winner
-        ? `🏆 Gana la foto de ${personName(day.winner.person)}`
-        : 'Empate hoy — ¡nadie gana el punto!';
+        ? `${personName(day.winner.person)}'s photo wins today`
+        : "It's a tie today — no point awarded.";
     } else if (day.myVote) {
-      statusEl.textContent = `Ya has votado. Esperando el voto de ${personName(otherPerson(state.me))}…`;
+      statusEl.textContent = `You voted. Waiting on ${personName(otherPerson(state.me))}…`;
     } else {
-      statusEl.textContent = 'Vota tu foto favorita de hoy.';
+      statusEl.textContent = "Vote for today's favorite photo.";
     }
 
     const grid = $('#photos-grid');
@@ -252,7 +256,7 @@
     for (const photo of day.photos) {
       const card = el('div', { className: 'photo-card' });
       if (day.winner && day.winner.photoId === photo.id) {
-        card.appendChild(el('div', { className: 'winner-crown', textContent: '👑' }));
+        card.appendChild(el('div', { className: 'winner-badge', textContent: 'Winner' }));
       }
       const img = el('img', { src: photo.path, alt: '' });
       img.addEventListener('click', () => openPhotoModal(photo));
@@ -264,12 +268,12 @@
       const isMyVote = day.myVote === photo.id;
       const voteBtn = el('button', {
         className: `vote-btn${isMyVote ? ' voted' : ''}`,
-        textContent: isMyVote ? '✓ Tu voto' : 'Votar'
+        textContent: isMyVote ? '✓ Your vote' : 'Vote'
       });
       voteBtn.addEventListener('click', () => vote(photo.id));
       row.appendChild(voteBtn);
       if (day.bothVoted && photo.voteCount !== null) {
-        row.appendChild(el('span', { className: 'vote-count', textContent: `${photo.voteCount}★` }));
+        row.appendChild(el('span', { className: 'vote-count', textContent: plural(photo.voteCount, 'vote') }));
       }
       card.appendChild(row);
       grid.appendChild(card);
@@ -293,7 +297,7 @@
 
   async function renderCalendar() {
     const month = monthStr(state.calendarCursor);
-    $('#cal-month-label').textContent = capitalizeFirst(state.calendarCursor.toLocaleDateString('es-ES', {
+    $('#cal-month-label').textContent = capitalizeFirst(state.calendarCursor.toLocaleDateString('en-US', {
       month: 'long', year: 'numeric'
     }));
 
@@ -334,19 +338,19 @@
     body.appendChild(el('h3', { textContent: date, style: 'margin-top:0' }));
 
     if (day.photos.length === 0) {
-      body.appendChild(el('p', { textContent: 'No hay fotos ese día.' }));
+      body.appendChild(el('p', { textContent: 'No photos that day.' }));
     } else if (!day.bothVoted) {
-      body.appendChild(el('p', { textContent: 'Todavía no han votado los dos ese día.' }));
+      body.appendChild(el('p', { textContent: "Both votes aren't in yet for that day." }));
     } else {
       body.appendChild(el('p', {
-        textContent: day.winner ? `Ganó ${personName(day.winner.person)}` : 'Empate ese día'
+        textContent: day.winner ? `${personName(day.winner.person)} won` : 'Tie that day'
       }));
       for (const photo of day.photos) {
         const block = el('div', { className: 'modal-photo-block' }, [
           el('img', { src: photo.path, alt: '' }),
           el('div', { className: 'modal-photo-meta' }, [
             el('span', { textContent: personName(photo.person) }),
-            el('span', { textContent: `${photo.voteCount ?? 0}★` })
+            el('span', { textContent: plural(photo.voteCount ?? 0, 'vote') })
           ])
         ]);
         body.appendChild(block);

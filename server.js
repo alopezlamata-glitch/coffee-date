@@ -24,7 +24,7 @@ const upload = multer({
   }),
   limits: { fileSize: 15 * 1024 * 1024 },
   fileFilter: (req, file, cb) => {
-    if (!file.mimetype.startsWith('image/')) return cb(new Error('Solo se admiten imágenes'));
+    if (!file.mimetype.startsWith('image/')) return cb(new Error('Only images are allowed'));
     cb(null, true);
   }
 });
@@ -48,17 +48,17 @@ app.post('/api/settings', (req, res) => {
 app.get('/api/day/:date', (req, res) => {
   const { date } = req.params;
   const { person } = req.query;
-  if (!DATE_RE.test(date)) return res.status(400).json({ error: 'Fecha inválida' });
-  if (!isPerson(person)) return res.status(400).json({ error: 'Persona inválida' });
+  if (!DATE_RE.test(date)) return res.status(400).json({ error: 'Invalid date' });
+  if (!isPerson(person)) return res.status(400).json({ error: 'Invalid person' });
   res.json(store.getDay(date, person));
 });
 
 app.post('/api/photos', upload.single('image'), (req, res) => {
   try {
     const { date, person, caption } = req.body || {};
-    if (!DATE_RE.test(date)) return res.status(400).json({ error: 'Fecha inválida' });
-    if (!isPerson(person)) return res.status(400).json({ error: 'Persona inválida' });
-    if (!req.file) return res.status(400).json({ error: 'Falta la imagen' });
+    if (!DATE_RE.test(date)) return res.status(400).json({ error: 'Invalid date' });
+    if (!isPerson(person)) return res.status(400).json({ error: 'Invalid person' });
+    if (!req.file) return res.status(400).json({ error: 'Missing image' });
     const photo = store.addPhoto({ date, person, filename: req.file.filename, caption });
     res.status(201).json(photo);
   } catch (err) {
@@ -68,18 +68,18 @@ app.post('/api/photos', upload.single('image'), (req, res) => {
 
 app.delete('/api/photos/:id', (req, res) => {
   const { person } = req.query;
-  if (!isPerson(person)) return res.status(400).json({ error: 'Persona inválida' });
+  if (!isPerson(person)) return res.status(400).json({ error: 'Invalid person' });
   const ok = store.deletePhoto(req.params.id, person);
-  if (!ok) return res.status(404).json({ error: 'No encontrada' });
+  if (!ok) return res.status(404).json({ error: 'Not found' });
   res.json({ ok: true });
 });
 
 app.post('/api/vote', (req, res) => {
   try {
     const { date, voter, photoId } = req.body || {};
-    if (!DATE_RE.test(date)) return res.status(400).json({ error: 'Fecha inválida' });
-    if (!isPerson(voter)) return res.status(400).json({ error: 'Persona inválida' });
-    if (!photoId) return res.status(400).json({ error: 'Falta la foto' });
+    if (!DATE_RE.test(date)) return res.status(400).json({ error: 'Invalid date' });
+    if (!isPerson(voter)) return res.status(400).json({ error: 'Invalid person' });
+    if (!photoId) return res.status(400).json({ error: 'Missing photo' });
     store.castVote({ date, voter, photoId });
     res.json(store.getDay(date, voter));
   } catch (err) {
@@ -89,7 +89,7 @@ app.post('/api/vote', (req, res) => {
 
 app.get('/api/calendar', (req, res) => {
   const { month } = req.query;
-  if (!MONTH_RE.test(month)) return res.status(400).json({ error: 'Mes inválido' });
+  if (!MONTH_RE.test(month)) return res.status(400).json({ error: 'Invalid month' });
   res.json(store.getCalendarMonth(month));
 });
 
@@ -105,5 +105,5 @@ app.use((err, req, res, next) => {
 });
 
 app.listen(PORT, () => {
-  console.log(`Coffee Date corriendo en http://localhost:${PORT}`);
+  console.log(`Coffee Date running at http://localhost:${PORT}`);
 });
