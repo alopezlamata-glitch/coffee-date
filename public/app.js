@@ -177,15 +177,32 @@
 
   // ---------- Today view ----------
 
-  $('#photo-input').addEventListener('change', () => {
-    const file = $('#photo-input').files[0];
-    $('#file-picker-text').textContent = file ? file.name : 'Add photo';
+  let selectedFile = null;
+  let selectedFileUrl = null;
+
+  function setSelectedFile(file) {
+    selectedFile = file || null;
+    if (selectedFileUrl) URL.revokeObjectURL(selectedFileUrl);
+    selectedFileUrl = file ? URL.createObjectURL(file) : null;
+    $('#photo-preview-wrap').hidden = !file;
+    $('#photo-preview').src = selectedFileUrl || '';
+  }
+
+  $('#camera-input').addEventListener('change', () => setSelectedFile($('#camera-input').files[0]));
+  $('#library-input').addEventListener('change', () => setSelectedFile($('#library-input').files[0]));
+
+  $('#photo-preview-clear').addEventListener('click', () => {
+    $('#camera-input').value = '';
+    $('#library-input').value = '';
+    setSelectedFile(null);
   });
 
   $('#upload-form').addEventListener('submit', async (e) => {
     e.preventDefault();
-    const fileInput = $('#photo-input');
-    if (!fileInput.files[0]) return;
+    if (!selectedFile) {
+      showToast('Take or choose a photo first');
+      return;
+    }
     const btn = $('#upload-btn');
     btn.disabled = true;
     btn.textContent = 'Uploading…';
@@ -194,16 +211,17 @@
       fd.append('date', todayStr());
       fd.append('person', state.me);
       fd.append('caption', $('#caption-input').value);
-      fd.append('image', fileInput.files[0]);
+      fd.append('image', selectedFile);
       await fetch('/api/photos', { method: 'POST', body: fd }).then(async (res) => {
         if (!res.ok) {
           const data = await res.json().catch(() => ({}));
           throw new Error(data.error || 'Upload failed');
         }
       });
-      fileInput.value = '';
+      $('#camera-input').value = '';
+      $('#library-input').value = '';
+      setSelectedFile(null);
       $('#caption-input').value = '';
-      $('#file-picker-text').textContent = 'Add photo';
       await renderToday();
       switchTab('today');
       showToast('Photo uploaded!');
