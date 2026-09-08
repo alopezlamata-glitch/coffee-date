@@ -1,9 +1,11 @@
 (() => {
   const state = {
     me: localStorage.getItem('coffeeDatePerson'),
-    settings: { personA: 'Person A', personB: 'Person B' },
+    settings: { personA: 'Adrian', personB: 'Karolina' },
     calendarCursor: new Date()
   };
+
+  const SECTION_LABEL = { a: (name) => `${name}'s espressos`, b: (name) => `${name}'s experiments` };
 
   const $ = (sel) => document.querySelector(sel);
   const el = (tag, props = {}, children = []) => {
@@ -230,6 +232,45 @@
   $('#modal-close').addEventListener('click', () => { $('#photo-modal').hidden = true; });
   document.querySelector('.modal-backdrop').addEventListener('click', () => { $('#photo-modal').hidden = true; });
 
+  function buildPhotoCard(photo, day) {
+    const card = el('div', { className: 'photo-card' });
+    if (day.winner && day.winner.photoId === photo.id) {
+      card.appendChild(el('div', { className: 'winner-badge', textContent: 'Winner' }));
+    }
+    const img = el('img', { src: photo.path, alt: '' });
+    img.addEventListener('click', () => openPhotoModal(photo));
+    card.appendChild(img);
+    card.appendChild(el('div', { className: 'photo-caption', textContent: photo.caption || '' }));
+
+    const row = el('div', { className: 'photo-vote-row' });
+    const isMyVote = day.myVote === photo.id;
+    const voteBtn = el('button', {
+      className: `vote-btn${isMyVote ? ' voted' : ''}`,
+      textContent: isMyVote ? '✓ Your vote' : 'Vote'
+    });
+    voteBtn.addEventListener('click', () => vote(photo.id));
+    row.appendChild(voteBtn);
+    if (day.bothVoted && photo.voteCount !== null) {
+      row.appendChild(el('span', { className: 'vote-count', textContent: plural(photo.voteCount, 'vote') }));
+    }
+    card.appendChild(row);
+    return card;
+  }
+
+  function renderPersonSection(person, day) {
+    $(`#section-title-${person}`).textContent = SECTION_LABEL[person](personName(person));
+    const grid = $(`#photos-grid-${person}`);
+    grid.innerHTML = '';
+    const photos = day.photos.filter((p) => p.person === person);
+    if (photos.length === 0) {
+      grid.appendChild(el('p', { className: 'section-empty', textContent: 'No photos yet.' }));
+      return;
+    }
+    for (const photo of photos) {
+      grid.appendChild(buildPhotoCard(photo, day));
+    }
+  }
+
   async function renderToday() {
     const date = todayStr();
     $('#today-date').textContent = capitalizeFirst(new Date().toLocaleDateString('en-US', {
@@ -251,33 +292,8 @@
       statusEl.textContent = "Vote for today's favorite photo.";
     }
 
-    const grid = $('#photos-grid');
-    grid.innerHTML = '';
-    for (const photo of day.photos) {
-      const card = el('div', { className: 'photo-card' });
-      if (day.winner && day.winner.photoId === photo.id) {
-        card.appendChild(el('div', { className: 'winner-badge', textContent: 'Winner' }));
-      }
-      const img = el('img', { src: photo.path, alt: '' });
-      img.addEventListener('click', () => openPhotoModal(photo));
-      card.appendChild(img);
-      card.appendChild(el('div', { className: 'photo-owner-tag', textContent: personName(photo.person) }));
-      card.appendChild(el('div', { className: 'photo-caption', textContent: photo.caption || '' }));
-
-      const row = el('div', { className: 'photo-vote-row' });
-      const isMyVote = day.myVote === photo.id;
-      const voteBtn = el('button', {
-        className: `vote-btn${isMyVote ? ' voted' : ''}`,
-        textContent: isMyVote ? '✓ Your vote' : 'Vote'
-      });
-      voteBtn.addEventListener('click', () => vote(photo.id));
-      row.appendChild(voteBtn);
-      if (day.bothVoted && photo.voteCount !== null) {
-        row.appendChild(el('span', { className: 'vote-count', textContent: plural(photo.voteCount, 'vote') }));
-      }
-      card.appendChild(row);
-      grid.appendChild(card);
-    }
+    renderPersonSection('a', day);
+    renderPersonSection('b', day);
   }
 
   // ---------- Calendar ----------
