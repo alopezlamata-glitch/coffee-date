@@ -87,6 +87,19 @@ app.post('/api/vote', (req, res) => {
   }
 });
 
+app.post('/api/comments', (req, res) => {
+  try {
+    const { photoId, author, text } = req.body || {};
+    if (!isPerson(author)) return res.status(400).json({ error: 'Invalid person' });
+    if (!photoId) return res.status(400).json({ error: 'Missing photo' });
+    if (!text || !text.trim()) return res.status(400).json({ error: 'Missing comment text' });
+    const comment = store.addComment({ photoId, author, text: text.trim() });
+    res.status(201).json(comment);
+  } catch (err) {
+    res.status(400).json({ error: err.message });
+  }
+});
+
 app.get('/api/calendar', (req, res) => {
   const { month } = req.query;
   if (!MONTH_RE.test(month)) return res.status(400).json({ error: 'Invalid month' });

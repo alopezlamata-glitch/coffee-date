@@ -5,8 +5,6 @@
     calendarCursor: new Date()
   };
 
-  const SECTION_LABEL = { a: (name) => `${name}'s espressos`, b: (name) => `${name}'s experiments` };
-
   const $ = (sel) => document.querySelector(sel);
   const el = (tag, props = {}, children = []) => {
     const node = document.createElement(tag);
@@ -39,6 +37,19 @@
 
   function personName(p) {
     return p === 'a' ? state.settings.personA : state.settings.personB;
+  }
+
+  function initials(name) {
+    return (name.trim().charAt(0) || '?').toUpperCase();
+  }
+
+  function timeAgo(iso) {
+    const minutes = Math.floor((Date.now() - new Date(iso).getTime()) / 60000);
+    if (minutes < 1) return 'Just now';
+    if (minutes < 60) return `${minutes}m ago`;
+    const hours = Math.floor(minutes / 60);
+    if (hours < 24) return `${hours}h ago`;
+    return `${Math.floor(hours / 24)}d ago`;
   }
 
   function showToast(msg) {
@@ -237,10 +248,31 @@
 
   const STAR_ICON = '<svg viewBox="0 0 24 24"><path d="M12 2.5l2.9 6 6.6.9-4.8 4.6 1.1 6.6L12 17.9l-5.8 3.1 1.1-6.6L2.5 9.4l6.6-.9L12 2.5Z"/></svg>';
 
-  function buildPhotoCard(photo, day) {
-    const card = el('div', { className: 'photo-card' });
-    const media = el('div', { className: 'photo-media' });
+  async function postComment(photo, text) {
+    try {
+      await api('/api/comments', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ photoId: photo.id, author: state.me, text })
+      });
+      await renderToday();
+    } catch (err) {
+      showToast(err.message);
+    }
+  }
 
+  function buildFeedPost(photo, day) {
+    const post = el('article', { className: 'feed-post' });
+
+    post.appendChild(el('div', { className: 'feed-post-header' }, [
+      el('div', { className: `avatar avatar-${photo.person}`, textContent: initials(personName(photo.person)) }),
+      el('div', { className: 'feed-post-headtext' }, [
+        el('span', { className: 'feed-post-name', textContent: personName(photo.person) }),
+        el('span', { className: 'feed-post-time', textContent: timeAgo(photo.createdAt) })
+      ])
+    ]));
+
+    const media = el('div', { className: 'photo-media' });
     const img = el('img', { src: photo.path, alt: '' });
     img.addEventListener('click', () => openPhotoModal(photo));
     media.appendChild(img);
@@ -258,27 +290,49 @@
     if (day.winner && day.winner.photoId === photo.id) {
       media.appendChild(el('div', { className: 'winner-badge', textContent: 'Winner' }));
     }
+    post.appendChild(media);
 
-    card.appendChild(media);
-    card.appendChild(el('div', { className: 'photo-caption', textContent: photo.caption || '' }));
+    const actions = el('div', { className: 'feed-post-actions' }, [
+      el('span', { className: 'feed-post-votehint', textContent: isMyVote ? 'You starred this' : 'Tap the star to vote' })
+    ]);
     if (day.bothVoted && photo.voteCount !== null) {
-      card.appendChild(el('span', { className: 'vote-count', textContent: plural(photo.voteCount, 'vote') }));
+      actions.appendChild(el('span', { className: 'vote-count', textContent: plural(photo.voteCount, 'vote') }));
     }
-    return card;
-  }
+    post.appendChild(actions);
 
-  function renderPersonSection(person, day) {
-    $(`#section-title-${person}`).textContent = SECTION_LABEL[person](personName(person));
-    const grid = $(`#photos-grid-${person}`);
-    grid.innerHTML = '';
-    const photos = day.photos.filter((p) => p.person === person);
-    if (photos.length === 0) {
-      grid.appendChild(el('p', { className: 'section-empty', textContent: 'No photos yet.' }));
-      return;
+    if (photo.caption) {
+      post.appendChild(el('p', { className: 'feed-caption' }, [
+        el('strong', { textContent: personName(photo.person) }),
+        ` ${photo.caption}`
+      ]));
     }
-    for (const photo of photos) {
-      grid.appendChild(buildPhotoCard(photo, day));
+
+    if (photo.comments && photo.comments.length > 0) {
+      const commentsList = el('div', { className: 'feed-comments' });
+      for (const c of photo.comments) {
+        commentsList.appendChild(el('p', { className: 'feed-comment' }, [
+          el('strong', { textContent: personName(c.author) }),
+          ` ${c.text}`
+        ]));
+      }
+      post.appendChild(commentsList);
     }
+
+    const commentForm = el('form', { className: 'feed-comment-form' });
+    const commentInput = el('input', { type: 'text', placeholder: 'Add a comment…', maxLength: 300 });
+    const commentBtn = el('button', { type: 'submit', textContent: 'Post' });
+    commentForm.appendChild(commentInput);
+    commentForm.appendChild(commentBtn);
+    commentForm.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const text = commentInput.value.trim();
+      if (!text) return;
+      commentInput.value = '';
+      postComment(photo, text);
+    });
+    post.appendChild(commentForm);
+
+    return post;
   }
 
   async function renderToday() {
@@ -302,8 +356,15 @@
       statusEl.textContent = "Tap the star on today's best photo.";
     }
 
-    renderPersonSection('a', day);
-    renderPersonSection('b', day);
+    const feed = $('#feed');
+    feed.innerHTML = '';
+    if (day.photos.length === 0) {
+      feed.appendChild(el('p', { className: 'section-empty', textContent: 'No photos yet today — add one!' }));
+    } else {
+      for (const photo of day.photos) {
+        feed.appendChild(buildFeedPost(photo, day));
+      }
+    }
   }
 
   // ---------- Calendar ----------
