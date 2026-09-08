@@ -175,12 +175,54 @@
   let selectedFile = null;
   let selectedFileUrl = null;
 
-  function setSelectedFile(file) {
-    selectedFile = file || null;
+  // Resize+recompress in the browser before upload, so a multi-MB phone
+  // photo doesn't cost multiple MB of server egress every time it's viewed.
+  function compressImage(file, maxDim = 1600, quality = 0.82) {
+    return new Promise((resolve) => {
+      const img = new Image();
+      const objectUrl = URL.createObjectURL(file);
+      img.onload = () => {
+        let { width, height } = img;
+        if (width > maxDim || height > maxDim) {
+          if (width > height) {
+            height = Math.round((height * maxDim) / width);
+            width = maxDim;
+          } else {
+            width = Math.round((width * maxDim) / height);
+            height = maxDim;
+          }
+        }
+        const canvas = document.createElement('canvas');
+        canvas.width = width;
+        canvas.height = height;
+        canvas.getContext('2d').drawImage(img, 0, 0, width, height);
+        URL.revokeObjectURL(objectUrl);
+        canvas.toBlob((blob) => {
+          resolve(blob ? new File([blob], 'photo.jpg', { type: 'image/jpeg' }) : file);
+        }, 'image/jpeg', quality);
+      };
+      img.onerror = () => {
+        URL.revokeObjectURL(objectUrl);
+        resolve(file);
+      };
+      img.src = objectUrl;
+    });
+  }
+
+  async function setSelectedFile(file) {
+    if (!file) {
+      selectedFile = null;
+      if (selectedFileUrl) URL.revokeObjectURL(selectedFileUrl);
+      selectedFileUrl = null;
+      $('#photo-preview-wrap').hidden = true;
+      $('#photo-preview').src = '';
+      return;
+    }
+    selectedFile = await compressImage(file);
     if (selectedFileUrl) URL.revokeObjectURL(selectedFileUrl);
-    selectedFileUrl = file ? URL.createObjectURL(file) : null;
-    $('#photo-preview-wrap').hidden = !file;
-    $('#photo-preview').src = selectedFileUrl || '';
+    selectedFileUrl = URL.createObjectURL(selectedFile);
+    $('#photo-preview-wrap').hidden = false;
+    $('#photo-preview').src = selectedFileUrl;
   }
 
   $('#camera-input').addEventListener('change', () => setSelectedFile($('#camera-input').files[0]));
